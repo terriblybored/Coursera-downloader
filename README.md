@@ -7,5 +7,5 @@ Will automatically download all videos from SaaS course and Model Thinking cours
 
 Run using java -jar downloader.jar
 
-[Download executable](https://github.com/terriblybored/Coursera-downloader/blob/master/target/scala-2.9.1/default-317fdc_2.9.1-0.1-SNAPSHOT-one-jar.jar)
+[Download executable](https://github.com/terriblybored/Coursera-downloader/raw/master/target/scala-2.9.1/default-317fdc_2.9.1-0.1-SNAPSHOT-one-jar.jar)
 
