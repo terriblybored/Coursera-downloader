@@ -7,46 +7,61 @@ object downloader {
 
   def main(args: Array[String]) {
 
-    var username = ""
-    var password = ""
+    var username = "32fdsf@mailinator.com"
+    var password = "32fdsf@mailinator.com"
 
     if (args.length == 2) {
       username = args(0)
       password = args(1)
     }
-    else println("downloader USERNAME PASSWORD")
+    else println("downloader EMAIL PASSWORD")
 
-    val modelThinking = new ModelThinking(username, password)
-    downloadAllMp4(modelThinking)
-    val saas = new SaaS(username, password)
-    downloadAllMp4(saas)
+    actor { val modelThinking = new ModelThinking(username, password)
+    downloadAllMp4(modelThinking) }
+    actor { val saas = new SaaS(username, password)
+    downloadAllMp4(saas) }
   }
   
   def downloadAllMp4(classObj: Coursera) {
-    val lessonsList = classObj.lessonList
-    val lessonsLength = lessonsList.length
-    (0 until lessonsLength).par.foreach(x => {
-      val sublecturesLength = lessonsList(x).subLectures.length
-      (0 until sublecturesLength).par.foreach(y => {classObj.getLink(x,y,"mp4").foreach(_.checkAndDownload())
-      })
-    })
+    val links = classObj.lessonList.flatMap(lesson => lesson.subLectures.flatMap(sublecture => sublecture.resources.filter(_.fileType=="mp4").flatMap(_.getLink)))
+    links.par.foreach(_.checkAndDownload)
   }
 }
 
-case class Lesson(id: Int, name: String, subLectures: Seq[Sublecture]) {
-  override def toString = "%d - %s".format(id, name)
+
+class Lesson(val id: Int, val name: String, private val subLecturesList: Seq[Sublecture], var parent: Class = null) {
+  def subLectures: Seq[Sublecture] = {
+    subLecturesList.foreach(sublecture => sublecture.parent = this) //Bad workaround to get parent; will have problems if sublectures can belong to two lessons
+    subLecturesList
+  }
+    override def toString = "%d - %s".format(id, name)
 }
 
-case class Sublecture(id: Int, name: String, resources: Seq[Resource]) {
+class Sublecture(val id: Int, val name: String, private val resourcesList: Seq[Resource], var parent: Lesson = null) {
+  def resources: Seq[Resource] = {
+    resourcesList.foreach(resource => resource.parent = this)
+    resourcesList
+  }
   override def toString = "%d - %s ".format(id, name) + resources.map(_.fileType).mkString(";")
 }
 
-class Resource(val link: String) {
+class Resource(val link: String, var parent: Sublecture = null) {
   def fileType = link match {
     case x if link.contains("pptx") => "pptx"
     case x if link.contains("txt") => "txt"
     case x if link.contains("mp4") => "mp4"
     case _ => "unknown"
+  }
+  def getLink: Option[Link] = {
+    try {
+      val sublecture = parent
+      val lesson = sublecture.parent
+      val course = lesson.parent
+      course.getLink(lesson.id, sublecture.id, this.fileType)
+    }
+    catch {
+      case _ => None
+    }
   }
 }
 
@@ -128,7 +143,7 @@ abstract class Coursera() extends Class {
         val resources = (sublecture \ "div" \ "a" \\ "@href") map (x => new Resource(x text))
         new Sublecture(idSubLec, name, resources)
       }
-      new Lesson(id, lessonName, sublectures)
+      new Lesson(id, lessonName, sublectures, this)
     }
   }
   def getLink(lessonId: Int,  subLectureId: Int, filetype: String) = {
