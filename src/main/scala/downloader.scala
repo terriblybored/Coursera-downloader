@@ -16,17 +16,17 @@ object downloader {
     }
     else println("downloader EMAIL PASSWORD")
 
-    actor { val modelThinking = new ModelThinking(username, password)
-    downloadAllMp4(modelThinking) }
-    actor { val saas = new SaaS(username, password)
-    downloadAllMp4(saas) }
+    actor { val modelThinking = new ModelThinking(username, password); downloadAllMp4(modelThinking) }
+    actor { val saas = new SaaS(username, password); downloadAllMp4(saas) }
+    actor { val nlp = new NLP(username, password); downloadAllMp4(nlp) }
   }
   
   def downloadAllMp4(classObj: Coursera) {
     //val links = classObj.lessonList.flatMap(lesson => lesson.subLectures.flatMap(sublecture => sublecture.resources.filter(_.fileType=="mp4").flatMap(_.getLink)))
-    collection.parallel.ForkJoinTasks.defaultForkJoinPool.setParallelism(20)
+    collection.parallel.ForkJoinTasks.defaultForkJoinPool.setParallelism(30)
     val links = classObj.lessonList.flatMap(lesson => lesson.subLectures.flatMap(sublecture => sublecture.resources.flatMap(_.getLink)))
     links.par.foreach(_.checkAndDownload)
+    println(classObj.courseFriendlyName + " Finished")
   }
 }
 
@@ -94,7 +94,7 @@ case class Link(file: File, link: String, executor: HttpExecutor) {
 }
 
 abstract class Class() {
-  val http = new Http with thread.Safety
+  val http = new Http with thread.Safety {override def maxConnections = 500}
   def getLink(lessonId: Int,  subLectureId: Int, filetype: String) : Option[Link]
 }
 
@@ -181,6 +181,8 @@ class SaaS(val email: String, val password: String) extends Coursera {
   login()
 }
 
-
-
-
+class NLP(val email: String, val password: String) extends Coursera {
+  val courseFriendlyName = "Natural Language Processing"
+  val coursename = "nlp"
+  login()
+}
