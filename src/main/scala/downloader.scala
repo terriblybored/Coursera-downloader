@@ -23,7 +23,9 @@ object downloader {
   }
   
   def downloadAllMp4(classObj: Coursera) {
-    val links = classObj.lessonList.flatMap(lesson => lesson.subLectures.flatMap(sublecture => sublecture.resources.filter(_.fileType=="mp4").flatMap(_.getLink)))
+    //val links = classObj.lessonList.flatMap(lesson => lesson.subLectures.flatMap(sublecture => sublecture.resources.filter(_.fileType=="mp4").flatMap(_.getLink)))
+    collection.parallel.ForkJoinTasks.defaultForkJoinPool.setParallelism(20)
+    val links = classObj.lessonList.flatMap(lesson => lesson.subLectures.flatMap(sublecture => sublecture.resources.flatMap(_.getLink)))
     links.par.foreach(_.checkAndDownload)
   }
 }
@@ -50,6 +52,7 @@ class Resource(val link: String, var parent: Sublecture = null) {
     case x if link.contains("pptx") => "pptx"
     case x if link.contains("txt") => "txt"
     case x if link.contains("mp4") => "mp4"
+    case x if link.contains("pdf") => "pdf"
     case _ => "unknown"
   }
   def getLink: Option[Link] = {
