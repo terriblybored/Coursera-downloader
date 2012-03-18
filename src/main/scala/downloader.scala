@@ -10,15 +10,26 @@ object downloader {
     var username = "32fdsf@mailinator.com"
     var password = "32fdsf@mailinator.com"
 
-    if (args.length == 2) {
+    if (args.length >= 2) {
       username = args(0)
       password = args(1)
     }
     else println("downloader EMAIL PASSWORD")
 
+    if (args.length == 3) {
+       val custom = new Coursera {
+        val email = args(0)
+        val password = args(1)
+        val courseFriendlyName = args(2)
+        val coursename = args(2)
+        login()
+        }
+        downloadAllMp4(custom)
+    }
+    else {
     actor { val modelThinking = new ModelThinking(username, password); downloadAllMp4(modelThinking) }
     actor { val saas = new SaaS(username, password); downloadAllMp4(saas) }
-    actor { val nlp = new NLP(username, password); downloadAllMp4(nlp) }
+    actor { val nlp = new NLP(username, password); downloadAllMp4(nlp) } }
   }
   
   def downloadAllMp4(classObj: Coursera) {
@@ -94,7 +105,7 @@ case class Link(file: File, link: String, executor: HttpExecutor) {
 }
 
 abstract class Class() {
-  val http = new Http with thread.Safety {override def maxConnections = 500}
+  val http = new Http with thread.Safety {override def maxConnections = 1000}
   def getLink(lessonId: Int,  subLectureId: Int, filetype: String) : Option[Link]
 }
 
@@ -122,7 +133,7 @@ abstract class Coursera() extends Class {
       }
     }) toString
 
-    val courseSite = http((:/("authentication.campus-class.com") secure) / "auth/auth/normal/index.php"
+    val courseSite = http((:/("authentication.coursera.org") secure) / "auth/auth/normal/index.php"
       <<? List("payload" -> payload)
       << List(("email" -> email), ("password" -> password), ("login" -> "Login"))
       </> {
