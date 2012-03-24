@@ -64,6 +64,7 @@ class Resource(val link: String, var parent: Sublecture = null) {
     case x if link.contains("txt") => "txt"
     case x if link.contains("mp4") => "mp4"
     case x if link.contains("pdf") => "pdf"
+    case x if link.contains("format=srt") => "srt"
     case _ => "unknown"
   }
   def getLink: Option[Link] = {
