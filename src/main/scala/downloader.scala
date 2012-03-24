@@ -123,9 +123,16 @@ abstract class Coursera() extends Class {
     http(site / coursename / "auth/welcome" >|)
     http(site / coursename / "auth/auth_redirector?type=login" >|)
 
-    val payload: String = http(site / coursename / "auth/auth_redirector?type=login&subtype=normal" >- {
-      (a: String) => {
-        """(?<=payload=)[\w%]*""".r.findFirstIn(a) match {
+    //disable redirection to reveal location headers
+    http.client.asInstanceOf[ConfiguredHttpClient].setRedirectStrategy(new org.apache.http.impl.client.DefaultRedirectStrategy {
+      import org.apache.http.{HttpRequest,HttpResponse}
+      import org.apache.http.protocol.HttpContext    
+      override def isRedirected(req: HttpRequest, res: HttpResponse, ctx: HttpContext) = false
+    })
+
+    val payload: String = http.x(site / coursename / "auth/auth_redirector?type=login&subtype=normal" headers_> {
+      a => {
+        """(?<=payload=)[\w%]*""".r.findFirstIn(a("location").head) match {
           case Some(x) => Request.decode_%(x)
           case _ => {
             println("Error: failed to get payload value, terminating program/actor now"); exit()
@@ -133,6 +140,16 @@ abstract class Coursera() extends Class {
         }
       }
     }) toString
+
+    //renable redirection; taken from dispatch's ConfiguredHttpClient
+    http.client.asInstanceOf[ConfiguredHttpClient].setRedirectStrategy(new org.apache.http.impl.client.DefaultRedirectStrategy {
+    import org.apache.http.{HttpRequest,HttpResponse}
+    import org.apache.http.protocol.HttpContext
+    import org.apache.http.HttpStatus._
+    override def isRedirected(req: HttpRequest, res: HttpResponse, ctx: HttpContext) =
+      (SC_MOVED_TEMPORARILY :: SC_MOVED_PERMANENTLY :: SC_TEMPORARY_REDIRECT :: 
+       SC_SEE_OTHER :: Nil) contains res.getStatusLine.getStatusCode
+    })
 
     val courseSite = http((:/("authentication.coursera.org") secure) / "auth/auth/normal/index.php"
       <<? List("payload" -> payload)
