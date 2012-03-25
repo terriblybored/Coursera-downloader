@@ -114,7 +114,7 @@ abstract class Coursera() extends Class {
   val email: String
   val password: String
 
-  val site = :/("www.coursera.org").secure
+  val site = :/("class.coursera.org").secure
   val coursename: String
   val courseFriendlyName: String
 
