@@ -1,5 +1,6 @@
 Coursera video downloader
 =========================
+Not maintained, binaries removed
 
 Horribly rough - first project in Scala; doesn't accept nearly any input at all, or display download progress.
 
@@ -16,5 +17,4 @@ Coursename should be taken from the site url, for example,
   java -jar downloader.jar a@b.com abcd crypto
 
   
-[Download executable](https://github.com/terriblybored/Coursera-downloader/raw/master/target/scala-2.9.1/default-317fdc_2.9.1-0.1-SNAPSHOT-one-jar.jar)
-
+#Binaries removed
